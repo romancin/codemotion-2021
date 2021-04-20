@@ -1,0 +1,47 @@
+{
+   "title": "Is the application available when half the pods are down?",
+   "description": "We expect Kubernetes to handle the situation gracefully when a pod goes down",
+   "tags": ["kubernetes"],
+   "steady-state-hypothesis": {
+       "title": "Verifying service remains healthy",
+       "probes": [
+           {
+               "name": "all-our-ratings-v2-microservices-should-be-healthy",
+               "type": "probe",
+               "tolerance": true,
+               "provider": {
+                   "type": "python",
+                   "module": "chaosk8s.probes",
+                   "func": "deployment_available_and_healthy",
+                   "arguments": {
+                      "ns": "bookinfo",
+                      "name": "ratings-v2"
+                   }
+               }
+           }
+       ]
+   },
+   "method": [
+       {
+           "type": "action",
+           "name": "terminate-ratings-pod",
+           "provider": {
+               "type": "python",
+               "module": "chaosk8s.pod.actions",
+               "func": "terminate_pods",
+               "arguments": {
+                  "ns": "bookinfo",
+                  "label_selector": "app=ratings",
+                  "name_pattern": "ratings-v2",
+                  "rand": true,
+                  "mode": "percentage",
+                  "qty": 50
+               }
+           },
+           "pauses": {
+               "after": 20
+           }
+       }
+   ]
+}
+

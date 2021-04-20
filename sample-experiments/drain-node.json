@@ -1,0 +1,49 @@
+{
+  "title": "Is the application available when a node is drained?",
+  "description": "We expect Kubernetes to handle the situation gracefully when a node goes down",
+  "tags": ["kubernetes"],
+  "steady-state-hypothesis": {
+      "title": "Verifying service remains healthy",
+      "probes": [
+          {
+              "name": "all-microservices-should-be-healthy",
+              "type": "probe",
+              "tolerance": true,
+              "provider": {
+                  "type": "python",
+                  "module": "chaosk8s.probes",
+                  "func": "all_pods_healthy"
+              }
+          }
+      ]
+  },
+  "method": [
+      {
+          "type": "action",
+          "name": "drain-nodes",
+          "provider": {
+              "type": "python",
+              "module": "chaosk8s.node.actions",
+              "func": "drain_nodes",
+              "arguments": {
+                "delete_pods_with_local_storage": true,
+                "count": 1              
+              }
+          },
+          "pauses": {
+              "after": 20
+          }
+      }
+  ],
+  "rollbacks": [
+    {
+        "type": "action",
+        "name": "uncordon-node",
+        "provider": {
+            "type": "python",
+            "module": "chaosk8s.node.actions",
+            "func": "uncordon_node"
+        }
+    }
+  ]
+}
